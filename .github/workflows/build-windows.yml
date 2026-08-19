@@ -29,14 +29,14 @@ jobs:
       - name: Build portable executable
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name MiniCalculator --icon mini_calc.ico --add-data "mini_calc.ico;." --hidden-import pystray._win32 mini_calculator.pyw
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name MiniCalculator --icon mini_calc.ico --add-data "mini_calc.ico;." --add-data "default_calculator_state.txt;." --hidden-import pystray._win32 mini_calculator.pyw
           New-Item -ItemType Directory -Force -Path release | Out-Null
           Copy-Item dist/MiniCalculator.exe release/MiniCalculator.exe
 
       - name: Build fast-start package
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onedir --windowed --name MiniCalculator-Fast --icon mini_calc.ico --add-data "mini_calc.ico;." --hidden-import pystray._win32 mini_calculator.pyw
+          python -m PyInstaller --noconfirm --clean --onedir --windowed --name MiniCalculator-Fast --icon mini_calc.ico --add-data "mini_calc.ico;." --add-data "default_calculator_state.txt;." --hidden-import pystray._win32 mini_calculator.pyw
           Compress-Archive -Path dist/MiniCalculator-Fast/* -DestinationPath release/MiniCalculator-Fast.zip -Force
 
       - name: Upload workflow artifacts
@@ -51,15 +51,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view v1.0.0 *> $null
+          gh release view v1.0.1 *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload v1.0.0 release/* --clobber
+            gh release upload v1.0.1 release/* --clobber
           } else {
-            gh release create v1.0.0 release/* --generate-notes --title "Mini Calculator v1.0.0" --target "${{ github.sha }}"
+            gh release create v1.0.1 release/* --generate-notes --title "Mini Calculator v1.0.1" --target "${{ github.sha }}"
           }
 
       - name: Publish tagged release
-        if: github.ref_type == 'tag' && github.ref_name != 'v1.0.0'
+        if: github.ref_type == 'tag' && github.ref_name != 'v1.0.1'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}

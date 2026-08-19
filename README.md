@@ -68,9 +68,11 @@ Pressing an operator as the first entry of a new List Mode series automatically 
 
 The calculator still runs if the optional tray packages or icon cannot be loaded.
 
+On the first launch, Mini Calculator opens with a short example that demonstrates units, apostrophe digit grouping, mathematical operator symbols, and a formatted answer. After the program closes, each user's own local state replaces this starter example.
+
 ## Build the Windows packages
 
-On Windows, double-click `build_windows.bat`. The two distributable files will be placed in the `release` folder. GitHub Actions also builds them automatically on every push. The first successful build creates the public `v1.0.0` release; later version tags create their corresponding releases.
+On Windows, double-click `build_windows.bat`. The two distributable files will be placed in the `release` folder. GitHub Actions also builds them automatically on every push. This revision publishes the public `v1.0.1` release; later version tags create their corresponding releases.
 
 ## Privacy
 

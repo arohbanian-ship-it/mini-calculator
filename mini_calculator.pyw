@@ -14,7 +14,8 @@ from tkinter import messagebox
 
 
 STATE_FILE = "calculator_state.txt"
-APP_VERSION = "47"
+DEFAULT_STATE_FILE = "default_calculator_state.txt"
+APP_VERSION = "48"
 last_result = 0
 edited_line_index = None
 current_font_size = 16
@@ -2188,9 +2189,12 @@ def load_state():
     global current_font_size, last_result, MAX_DIGITS
     global live_formatting_enabled, digit_separator, list_mode_enabled
     global keypad_visible, pretty_operators_enabled
-    if not os.path.exists(STATE_FILE):
+    state_path = STATE_FILE
+    if not os.path.exists(state_path):
+        state_path = resource_path(DEFAULT_STATE_FILE)
+    if not os.path.exists(state_path):
         return
-    with open(STATE_FILE, "r", encoding="utf-8") as f:
+    with open(state_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
     root.geometry(lines[0].strip())
     current_font_size = int(lines[1].strip())

@@ -10,4 +10,4 @@ The program saves these items in a local `calculator_state.txt` file so the next
 - the last result;
 - the calculator text and history.
 
-The public source and downloadable release packages do not include any user's state file. Delete your local `calculator_state.txt` while the calculator is closed if you want to reset the saved session.
+The public source and downloadable release packages do not include any user's personal state file. They contain only a clean first-launch example named `default_calculator_state.txt`. Delete your local `calculator_state.txt` while the calculator is closed if you want to reset the saved session and see the starter example again.

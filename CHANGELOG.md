@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 — 2026-08-19
+
+- Added a clean first-launch state with a compact unit-based example.
+- Existing users' saved settings and calculation history continue to take priority.
+
 ## 1.0.0 — 2026-08-19
 
 - First public release.

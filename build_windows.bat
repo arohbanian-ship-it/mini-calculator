@@ -13,12 +13,12 @@ if errorlevel 1 exit /b 1
 if not exist release mkdir release
 
 echo Building portable single-file version...
-py -m PyInstaller --noconfirm --clean --onefile --windowed --name MiniCalculator --icon mini_calc.ico --add-data "mini_calc.ico;." --hidden-import pystray._win32 mini_calculator.pyw
+py -m PyInstaller --noconfirm --clean --onefile --windowed --name MiniCalculator --icon mini_calc.ico --add-data "mini_calc.ico;." --add-data "default_calculator_state.txt;." --hidden-import pystray._win32 mini_calculator.pyw
 if errorlevel 1 exit /b 1
 copy /y dist\MiniCalculator.exe release\MiniCalculator.exe >nul
 
 echo Building faster-starting folder version...
-py -m PyInstaller --noconfirm --clean --onedir --windowed --name MiniCalculator-Fast --icon mini_calc.ico --add-data "mini_calc.ico;." --hidden-import pystray._win32 mini_calculator.pyw
+py -m PyInstaller --noconfirm --clean --onedir --windowed --name MiniCalculator-Fast --icon mini_calc.ico --add-data "mini_calc.ico;." --add-data "default_calculator_state.txt;." --hidden-import pystray._win32 mini_calculator.pyw
 if errorlevel 1 exit /b 1
 
 powershell -NoProfile -Command "Compress-Archive -Path 'dist\MiniCalculator-Fast\*' -DestinationPath 'release\MiniCalculator-Fast.zip' -Force"

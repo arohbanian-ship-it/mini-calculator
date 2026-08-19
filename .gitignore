@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+build/
+dist/
+release/
+*.spec
+calculator_state.txt
+.venv/
+venv/

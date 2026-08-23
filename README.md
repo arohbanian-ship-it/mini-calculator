@@ -1,6 +1,6 @@
 # Mini Calculator
 
-A compact Windows calculator built for real working notes: write calculations, units, and descriptions together, keep the complete line for a report, and still get the numerical result.
+A Windows calculator built for working notes, not just button pressing: write calculations, units, and descriptions together, keep the complete line for a report, and still get the numerical result.
 
 Created by Amirhossein with iterative development assistance from ChatGPT.
 

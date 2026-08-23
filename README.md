@@ -4,6 +4,24 @@ A compact Windows calculator built for real working notes: write calculations, u
 
 Created by Amirhossein with iterative development assistance from ChatGPT.
 
+## Screenshots
+
+### Main window
+Shows mixed calculations, units, notes, `Ans`, powers, pi, and formatted results in one editable workspace.
+
+![Mini Calculator main window](docs/main-window.png)
+
+### Right-click options
+Precision, digit separator, live formatting, mathematical symbols, List Mode, and keypad visibility are all available from the context menu.
+
+![Mini Calculator options menu](docs/options-menu.png)
+
+### Direct expression entry
+Type expressions directly, including adjacent parenthesized terms and other everyday calculator notation.
+
+![Mini Calculator expression entry](docs/expression-entry.png)
+
+### List Mode
 ![List Mode example](docs/list-mode-example.png)
 
 ## Highlights

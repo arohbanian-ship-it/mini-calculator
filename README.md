@@ -2,6 +2,8 @@
 
 A Windows calculator built for working notes, not just button pressing: write calculations, units, and descriptions together, keep the complete line for a report, and still get the numerical result.
 
+Designed as a calculation scratchpad: keep expressions, units, notes, and results together in an editable workspace.
+
 Created by Amirhossein with iterative development assistance from ChatGPT.
 
 ## Screenshots

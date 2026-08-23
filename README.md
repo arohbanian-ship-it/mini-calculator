@@ -16,12 +16,14 @@ Precision, digit separator, live formatting, mathematical symbols, List Mode, an
 
 ![Mini Calculator options menu](docs/options-menu.png)
 
-### Direct expression entry
-Type expressions directly, including adjacent parenthesized terms and other everyday calculator notation.
+### Implicit multiplication & parenthesis auto-completion
+Adjacent parenthesized expressions are interpreted as multiplication, and unfinished parentheses are completed automatically when the expression is evaluated.
 
-![Mini Calculator expression entry](docs/expression-entry.png)
+![Mini Calculator implicit multiplication and parenthesis auto-completion](docs/expression-entry.png)
 
 ### List Mode
+Enter one value or operation per line and keep a continuously updated result for quick running calculations.
+
 ![List Mode example](docs/list-mode-example.png)
 
 ## Highlights

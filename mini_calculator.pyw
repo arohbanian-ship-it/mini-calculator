@@ -10,12 +10,12 @@ import threading
 
 #import pdb
 #pdb.set_trace()
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 
 
 STATE_FILE = "calculator_state.txt"
 DEFAULT_STATE_FILE = "default_calculator_state.txt"
-APP_VERSION = "48"
+APP_VERSION = "1.1.0"
 last_result = 0
 edited_line_index = None
 current_font_size = 16
@@ -31,7 +31,14 @@ RESULT_BOTTOM_SPACING = 4
 is_programmatic_edit = False
 live_formatting_enabled = True
 digit_separator = ","
-pretty_operators_enabled = False
+use_multiplication_symbol = False
+use_division_symbol = False
+space_around_operators = True
+font_family = "Calibri"
+fraction_font_offset = 3
+pending_display_format = None
+last_clear_snapshot = None
+escape_press_count = 0
 list_mode_enabled = False
 keypad_visible = True
 tray_icon = None
@@ -212,15 +219,16 @@ def canonicalize_operator_symbols(text):
     return str(text).replace("×", "*").replace("÷", "/")
 
 
-def format_operator_symbols(text, enabled=None):
-    """Return text using either keyboard or calculator-style operators."""
-    if enabled is None:
-        enabled = pretty_operators_enabled
-
+def format_operator_symbols(text):
+    """Apply the independent multiplication and division display settings."""
     canonical = canonicalize_operator_symbols(text)
-    if enabled:
-        return canonical.replace("*", "×").replace("/", "÷")
+    if use_multiplication_symbol:
+        canonical = canonical.replace("*", "×")
+    if use_division_symbol:
+        canonical = canonical.replace("/", "÷")
     return canonical
+
+
 
 def is_pure_math(text):
     normalized = canonicalize_operator_symbols(text)
@@ -841,15 +849,15 @@ def reformat_entire_history(enabled):
     calc_text.yview_moveto(top_fraction)
 
 
-def reformat_operator_symbols(enabled):
+def reformat_operator_symbols():
     """Apply the operator-symbol choice to all visible and saved edit text."""
     global edit_snapshot_text
 
     original_text = calc_text.get("1.0", "end-1c")
-    transformed_text = format_operator_symbols(original_text, enabled)
+    transformed_text = format_operator_symbols(original_text)
 
     if edit_snapshot_text is not None:
-        edit_snapshot_text = format_operator_symbols(edit_snapshot_text, enabled)
+        edit_snapshot_text = format_operator_symbols(edit_snapshot_text)
 
     if transformed_text == original_text:
         apply_formatting()
@@ -921,8 +929,10 @@ def format_operator_spacing_token(token):
         )
         unary_sign = (
             character in "+-"
-            and previous_significant is not None
-            and previous_significant in "+-*/×÷^(=√eE"
+            and (
+                previous_significant is None
+                or previous_significant in "+-*/×÷^(=√eE"
+            )
         )
 
         if unary_sign:
@@ -942,6 +952,8 @@ def format_operator_spacing_token(token):
 def format_operator_spacing_text(text):
     """Format only calculator tokens, leaving descriptions and units intact."""
     text = str(text).replace(THIN_SPACE, "")
+    if not space_around_operators:
+        return text
     pieces = re.split(r"(\s+)", text)
 
     for index, piece in enumerate(pieces):
@@ -2125,30 +2137,83 @@ def handle_ctrl_mousewheel(event):
     return "break"
 
 def update_font():
-    calc_text.config(font=("Calibri", current_font_size))
-    #calc_text.config(font=("Lucida Console", current_font_size))
+    """Update only the few font objects used by the text display."""
+    family = font_family
+    fraction_size = max(7, current_font_size - fraction_font_offset)
+    calc_text.config(font=(family, current_font_size))
+    calc_text.tag_configure("invalid", font=(family, current_font_size))
+    calc_text.tag_configure("operator", font=(family, current_font_size, "bold"))
+    calc_text.tag_configure(
+        "result", font=(family, current_font_size, "bold"),
+        spacing3=RESULT_BOTTOM_SPACING,
+    )
+    calc_text.tag_configure(
+        "list_result", font=(family, current_font_size, "bold"),
+        spacing3=RESULT_BOTTOM_SPACING,
+    )
+    calc_text.tag_configure("fraction", font=(family, fraction_size))
+    calc_text.tag_configure("result_fraction", font=(family, fraction_size, "bold"))
 
-    calc_text.tag_configure("invalid", font=("Calibri", current_font_size))
-    calc_text.tag_configure(
-        "operator",
-        font=("Calibri", current_font_size, "bold"),
+
+def show_font_settings():
+    """Enumerate installed fonts only while the options dialog is open."""
+    dialog = tk.Toplevel(root)
+    dialog.title("Display Font")
+    dialog.transient(root)
+    dialog.resizable(False, False)
+    dialog.grab_set()
+    fonts = sorted(set(tkfont.families(root)), key=str.casefold)
+    family_value = tk.StringVar(value=font_family)
+    size_value = tk.StringVar(value=str(current_font_size))
+    fraction_value = tk.StringVar(value=str(fraction_font_offset))
+    tk.Label(dialog, text="Font family:").grid(
+        row=0, column=0, sticky="w", padx=10, pady=(12, 6))
+    family_box = ttk.Combobox(
+        dialog, textvariable=family_value, values=fonts,
+        state="readonly", width=35,
     )
-    calc_text.tag_configure(
-        "result",
-        font=("Calibri", current_font_size, "bold"),
-        spacing3=RESULT_BOTTOM_SPACING,
-    )
-    calc_text.tag_configure(
-        "list_result",
-        font=("Calibri", current_font_size, "bold"),
-        spacing3=RESULT_BOTTOM_SPACING,
-    )
-    fraction_size = max(8, current_font_size - 3)
-    calc_text.tag_configure("fraction", font=("Calibri", fraction_size))
-    calc_text.tag_configure(
-        "result_fraction",
-        font=("Calibri", fraction_size, "bold"),
-    )
+    family_box.grid(row=0, column=1, padx=10, pady=(12, 6))
+    tk.Label(dialog, text="Main font size:").grid(
+        row=1, column=0, sticky="w", padx=10, pady=6)
+    tk.Spinbox(
+        dialog, from_=8, to=60, textvariable=size_value, width=7,
+    ).grid(row=1, column=1, sticky="w", padx=10, pady=6)
+    tk.Label(dialog, text="Fraction size reduction:").grid(
+        row=2, column=0, sticky="w", padx=10, pady=6)
+    tk.Spinbox(
+        dialog, from_=0, to=12, textvariable=fraction_value, width=7,
+    ).grid(row=2, column=1, sticky="w", padx=10, pady=6)
+
+    def accept():
+        global font_family, current_font_size, fraction_font_offset
+        try:
+            chosen_size = int(size_value.get())
+            chosen_fraction = int(fraction_value.get())
+        except ValueError:
+            messagebox.showerror("Font settings", "Enter valid numbers.", parent=dialog)
+            return
+        if not 8 <= chosen_size <= 60 or not 0 <= chosen_fraction <= 12:
+            messagebox.showerror("Font settings", "Size out of range.", parent=dialog)
+            return
+        if family_value.get() not in fonts:
+            messagebox.showerror("Font settings", "Select an installed font.", parent=dialog)
+            return
+        font_family = family_value.get()
+        current_font_size = chosen_size
+        fraction_font_offset = chosen_fraction
+        update_font()
+        apply_formatting()
+        dialog.destroy()
+        calc_text.focus_set()
+
+    buttons = tk.Frame(dialog)
+    buttons.grid(row=3, column=0, columnspan=2, pady=(5, 12))
+    ttk.Button(buttons, text="OK", command=accept).pack(side="left", padx=5)
+    ttk.Button(buttons, text="Cancel", command=dialog.destroy).pack(side="left", padx=5)
+    dialog.bind("<Return>", lambda event: accept())
+    dialog.bind("<Escape>", lambda event: dialog.destroy())
+    family_box.focus_set()
+
 
 
 def update_digit_status():
@@ -2156,10 +2221,15 @@ def update_digit_status():
         digit_status_var.set(f"Digits: {MAX_DIGITS}")
 
 def clear_screen():
-    global last_result,edit_snapshot_text,edit_snapshot_taken
+    global last_result, edit_snapshot_text, edit_snapshot_taken, last_clear_snapshot
+    existing = calc_text.get("1.0", "end-1c")
+    if existing:
+        last_clear_snapshot = (existing, last_result)
     begin_programmatic_edit()
     try:
+        calc_text.edit_separator()
         calc_text.delete("1.0", tk.END)
+        calc_text.edit_separator()
     finally:
         end_programmatic_edit()
     last_result = 0
@@ -2167,6 +2237,9 @@ def clear_screen():
     edit_snapshot_taken = False
     if list_mode_enabled:
         set_list_status("Result: 0")
+    calc_text.focus_set()
+
+
 # ---------- Save / Load state ----------
 def save_state():
     with open(STATE_FILE, "w", encoding="utf-8") as f:
@@ -2180,7 +2253,11 @@ def save_state():
             "'": "apostrophe",
         }.get(digit_separator, "comma")
         f.write(f"DIGIT_SEPARATOR={separator_code}\n")
-        f.write(f"PRETTY_OPERATORS={int(pretty_operators_enabled)}\n")
+        f.write(f"MULTIPLICATION_SYMBOL={int(use_multiplication_symbol)}\n")
+        f.write(f"DIVISION_SYMBOL={int(use_division_symbol)}\n")
+        f.write(f"OPERATOR_SPACING={int(space_around_operators)}\n")
+        f.write(f"DISPLAY_FONT={font_family}\n")
+        f.write(f"FRACTION_SIZE_REDUCTION={fraction_font_offset}\n")
         f.write(f"KEYPAD_VISIBLE={int(keypad_visible)}\n")
         f.write(f"LIST_MODE={int(list_mode_enabled)}\n")
         f.write(calc_text.get("1.0", tk.END))
@@ -2188,7 +2265,8 @@ def save_state():
 def load_state():
     global current_font_size, last_result, MAX_DIGITS
     global live_formatting_enabled, digit_separator, list_mode_enabled
-    global keypad_visible, pretty_operators_enabled
+    global keypad_visible, use_multiplication_symbol, use_division_symbol
+    global space_around_operators, font_family, fraction_font_offset
     state_path = STATE_FILE
     if not os.path.exists(state_path):
         state_path = resource_path(DEFAULT_STATE_FILE)
@@ -2217,12 +2295,23 @@ def load_state():
                 "apostrophe": "'",
             }.get(saved_value, ",")
         elif setting_line.startswith("DISPLAY_FONT="):
-            # Compatibility with the temporary font-preview versions.
-            # Calibri is fixed again, so the saved family is simply discarded.
-            pass
+            font_family = setting_line.partition("=")[2].strip() or "Calibri"
+        elif setting_line.startswith("FRACTION_SIZE_REDUCTION="):
+            try:
+                fraction_font_offset = max(0, min(12, int(setting_line.partition("=")[2].strip())))
+            except ValueError:
+                fraction_font_offset = 3
         elif setting_line.startswith("PRETTY_OPERATORS="):
-            saved_value = setting_line.partition("=")[2].strip()
-            pretty_operators_enabled = saved_value != "0"
+            # Legacy preference controlled both symbols.
+            legacy_value = setting_line.partition("=")[2].strip() != "0"
+            use_multiplication_symbol = legacy_value
+            use_division_symbol = legacy_value
+        elif setting_line.startswith("MULTIPLICATION_SYMBOL="):
+            use_multiplication_symbol = setting_line.partition("=")[2].strip() != "0"
+        elif setting_line.startswith("DIVISION_SYMBOL="):
+            use_division_symbol = setting_line.partition("=")[2].strip() != "0"
+        elif setting_line.startswith("OPERATOR_SPACING="):
+            space_around_operators = setting_line.partition("=")[2].strip() != "0"
         elif setting_line.startswith("KEYPAD_VISIBLE="):
             saved_value = setting_line.partition("=")[2].strip()
             keypad_visible = saved_value != "0"
@@ -2243,7 +2332,7 @@ def load_state():
     else:
         ensure_bottom_empty_line()
     update_font()
-    reformat_operator_symbols(pretty_operators_enabled)
+    reformat_operator_symbols()
     # Enforce the saved preference immediately, including histories created by
     # older versions that could retain separators while formatting was disabled.
     reformat_entire_history(live_formatting_enabled)
@@ -2262,7 +2351,9 @@ def on_close():
     root.destroy()
 
 def handle_keypress(event):
-    global is_formatting, is_pasting, last_key_pressed, last_key_action
+    global is_formatting, is_pasting, last_key_pressed, last_key_action, escape_press_count
+    if event.keysym != "Escape":
+        escape_press_count = 0
 
     last_key_pressed = event.char
     last_key_action = event.keysym
@@ -2374,6 +2465,21 @@ def handle_keypress(event):
     if event.state & 0x4:  # Ctrl key is pressed
         return
 
+    # Fractional digits enter with their intended font size immediately.
+    if live_formatting_enabled and event.char.isascii() and event.char.isdigit():
+        cursor = calc_text.index("insert")
+        prefix = calc_text.get(f"{cursor} linestart", cursor)
+        if re.search(r"(?:^|[^\w.])(?:\d[\d,']*)?\.\d*$", prefix):
+            try:
+                start = calc_text.index("sel.first")
+                end = calc_text.index("sel.last")
+                calc_text.delete(start, end)
+                calc_text.mark_set("insert", start)
+            except tk.TclError:
+                pass
+            calc_text.insert("insert", event.char, ("fraction",))
+            return "break"
+
     # Allow only digits/dot/minus to be formatted
     if not (event.char.isdigit() or event.char == '.' or event.char == '-'):
         return
@@ -2385,6 +2491,25 @@ def handle_control_shortcut(event):
 
     # On Windows, event.keycode is the layout-independent virtual-key code.
     # This keeps the shortcuts working when Persian is the active keyboard.
+    if event.keycode == ord("Z"):
+        global last_clear_snapshot, last_result
+        if last_clear_snapshot is not None and not calc_text.get("1.0", "end-1c"):
+            saved_text, saved_result = last_clear_snapshot
+            begin_programmatic_edit()
+            try:
+                calc_text.insert("1.0", saved_text)
+            finally:
+                end_programmatic_edit()
+            last_result = saved_result
+            last_clear_snapshot = None
+            apply_formatting()
+            calc_text.mark_set("insert", "end-1c")
+        else:
+            try:
+                calc_text.edit_undo()
+            except tk.TclError:
+                pass
+        return "break"
     if event.keycode == ord("C"):
         calc_text.event_generate("<<Copy>>")
         return "break"
@@ -2750,8 +2875,23 @@ def apply_number_format():
     apply_formatting()
 
  
+def queue_display_formatting():
+    """Debounce full-history tag work while keys are being typed."""
+    global pending_display_format
+    if pending_display_format is not None:
+        calc_text.after_cancel(pending_display_format)
+    pending_display_format = calc_text.after(100, run_display_formatting)
+
+
+def run_display_formatting():
+    global pending_display_format
+    pending_display_format = None
+    apply_formatting()
+
+
 def on_text_modified(event=None):
     global edit_snapshot_text, edit_snapshot_taken, debounce_id, is_programmatic_edit
+    global last_clear_snapshot
 
     if is_programmatic_edit:
         calc_text.edit_modified(False)
@@ -2759,6 +2899,9 @@ def on_text_modified(event=None):
 
     if not calc_text.edit_modified():
         return
+
+    # Typing after Clear ends the special one-step restoration.
+    last_clear_snapshot = None
 
     # Take snapshot once (only for real user edits)
     if not edit_snapshot_taken:
@@ -2773,7 +2916,7 @@ def on_text_modified(event=None):
     if live_formatting_enabled:
         debounce_id = calc_text.after(150, apply_number_format)
 
-    calc_text.after_idle(apply_formatting)
+    queue_display_formatting()
 
     if list_mode_enabled:
         calc_text.after_idle(update_list_result_live)
@@ -2816,12 +2959,11 @@ def restore_snapshot_and_jump_to_end():
     calc_text.see("insert")
 
 def handle_escape(event=None):
-    # Restore an edited history line first, if necessary.
+    """Return to the empty line; three consecutive presses minimize."""
+    global escape_press_count
+    escape_press_count += 1
     if edit_snapshot_taken:
         restore_snapshot_and_jump_to_end()
-
-    # Esc always returns focus to the bottom empty input line, even when there
-    # was no edit to restore.
     if list_mode_enabled:
         ensure_list_bottom_input_line()
         update_list_status()
@@ -2829,8 +2971,13 @@ def handle_escape(event=None):
         ensure_bottom_empty_line()
     calc_text.mark_set("insert", "end-1c")
     calc_text.see("insert")
-    calc_text.focus_set()
+    if escape_press_count >= 3:
+        escape_press_count = 0
+        root.iconify()
+    else:
+        calc_text.focus_set()
     return "break"
+
 
 
 def copy_text():
@@ -2848,8 +2995,11 @@ def copy_text():
 def paste_text():
     try:
         # Get text from clipboard
+        clipboard_text = root.clipboard_get().replace("\r\n", "\n").replace("\r", "\n")
+        if clipboard_text.endswith("\n"):
+            clipboard_text = clipboard_text[:-1]  # Excel adds one final line break.
         text = format_operator_spacing_text(
-            format_operator_symbols(root.clipboard_get())
+            format_operator_symbols(clipboard_text)
         )
         # Insert at current cursor position
         take_edit_snapshot_before_change()
@@ -2930,17 +3080,23 @@ def set_digit_separator(separator):
     calc_text.focus_set()
 
 
-def toggle_pretty_operators():
-    global pretty_operators_enabled
-
-    pretty_operators_enabled = bool(pretty_operators_var.get())
-    reformat_operator_symbols(pretty_operators_enabled)
+def toggle_display_operators():
+    global use_multiplication_symbol, use_division_symbol
+    use_multiplication_symbol = bool(multiplication_symbol_var.get())
+    use_division_symbol = bool(division_symbol_var.get())
+    reformat_operator_symbols()
     reformat_operator_spacing()
-
     if list_mode_enabled:
         update_list_status()
-
     calc_text.focus_set()
+
+
+def toggle_operator_spacing():
+    global space_around_operators
+    space_around_operators = bool(operator_spacing_var.get())
+    reformat_operator_spacing()
+    calc_text.focus_set()
+
 
 def set_digits(n):
     global MAX_DIGITS
@@ -3197,7 +3353,9 @@ v_scroll.pack(side="right", fill="y")
 calc_text = tk.Text(
     frame,
     wrap="char",
-    font=("Calibri", current_font_size),
+    font=(font_family, current_font_size),
+    undo=True,
+    maxundo=500,
     yscrollcommand=v_scroll.set,
 )
 
@@ -3325,12 +3483,25 @@ right_click_menu.add_checkbutton(
     command=toggle_live_formatting
 )
 
-pretty_operators_var = tk.BooleanVar(value=pretty_operators_enabled)
+multiplication_symbol_var = tk.BooleanVar(value=use_multiplication_symbol)
 right_click_menu.add_checkbutton(
-    label="Use × and ÷ Symbols",
-    variable=pretty_operators_var,
-    command=toggle_pretty_operators,
+    label="Replace * with ×",
+    variable=multiplication_symbol_var,
+    command=toggle_display_operators,
 )
+division_symbol_var = tk.BooleanVar(value=use_division_symbol)
+right_click_menu.add_checkbutton(
+    label="Replace / with ÷",
+    variable=division_symbol_var,
+    command=toggle_display_operators,
+)
+operator_spacing_var = tk.BooleanVar(value=space_around_operators)
+right_click_menu.add_checkbutton(
+    label="Spaces Around Operators",
+    variable=operator_spacing_var,
+    command=toggle_operator_spacing,
+)
+right_click_menu.add_command(label="Display Font...", command=show_font_settings)
 
 list_mode_var = tk.BooleanVar(value=list_mode_enabled)
 right_click_menu.add_checkbutton(

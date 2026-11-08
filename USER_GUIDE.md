@@ -40,18 +40,20 @@ Right-click the text area or click the `Digits:` indicator to open the settings 
 1. Number of fractional digits.
 2. **Digit Separator** — comma or apostrophe.
 3. **Live Number Formatting**.
-4. **Use × and ÷ Symbols**.
-5. **List Mode**.
-6. **Show Keypad**.
+4. **Replace * with ×** and **Replace / with ÷** (independent).
+5. **Spaces Around Operators** — add or remove thin spaces for clarity.
+6. **Display Font...** — choose an installed font, its size, and how much smaller digits after the decimal point appear.
+7. **List Mode**.
+8. **Show Keypad**.
 
 Turning live formatting off removes calculation formatting from existing expressions and answers as well as new input.
 
-Hold **Ctrl** and rotate the mouse wheel to change the font size. Fractional digits use a slightly smaller size automatically.
+Hold **Ctrl** and rotate the mouse wheel to change the font size. Fractional digits enter at the smaller size immediately. Font discovery occurs only when opening the font dialog.
 
 ## Selection, copy, and paste
 
-Select text before pressing a function button to apply the function around that text. Standard copy and paste shortcuts work with English and Persian keyboard layouts. The right-click menu also provides explicit Copy and Paste commands.
+Select text before pressing a function button to apply the function around that text. Standard copy and paste shortcuts work with English and Persian keyboard layouts. The right-click menu also provides explicit Copy and Paste commands. Excel's trailing line break is removed on paste. After clicking **C** to clear the calculator, press **Ctrl+Z** to restore its previous content. Press **Escape** three consecutive times to minimize the window; Escape never restores it.
 
 ## Local data
 
-Mini Calculator stores window geometry, display preferences, the last answer, and calculation history in `calculator_state.txt` beside the program's working location. Close the calculator before copying or deleting this file.
+Mini Calculator stores window geometry, selected font, display preferences, the last answer, and calculation history in `calculator_state.txt` beside the program's working location. Close the calculator before copying or deleting this file.

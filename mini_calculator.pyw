@@ -929,8 +929,10 @@ def format_operator_spacing_token(token):
         )
         unary_sign = (
             character in "+-"
-            and previous_significant is not None
-            and previous_significant in "+-*/×÷^(=√eE"
+            and (
+                previous_significant is None
+                or previous_significant in "+-*/×÷^(=√eE"
+            )
         )
 
         if unary_sign:

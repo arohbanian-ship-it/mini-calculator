@@ -34,7 +34,10 @@ Enter one value or operation per line and keep a continuously updated result for
 - **List Mode** for one value or operation per line, with a continuously updated result.
 - Units and nearby descriptive text can remain in the note while the mathematical parts are calculated.
 - Automatic thousands separators using either commas or apostrophes.
-- Optional live number formatting and optional `×` / `÷` display symbols.
+- Optional live number formatting, independent `×` / `÷` choices, and optional operator spacing.
+- Selectable font family, main font size, and fractional-digit size in **Display Font...** options.
+- Excel paste removes the extra trailing line break; Ctrl+Z restores the previous contents after Clear.
+- Three consecutive Escape presses minimize the calculator (Escape does not restore it).
 - Smaller fractional digits, bold operators, and formatted result lines.
 - Parenthesis completion, implicit multiplication, powers, square roots, pi, and `Ans`.
 - Selection-aware `(x)`, `x^`, `x⁻¹`, `x²`, and `√x` buttons.
@@ -82,7 +85,7 @@ Pressing an operator as the first entry of a new List Mode series automatically 
    py -m pip install -r requirements.txt
    ```
 
-3. Double-click `mini_calculator.pyw`, or run:
+3. Double-click `run_calculator.bat` to check Python/Tkinter and install optional tray packages without administrator privileges, or launch `mini_calculator.pyw` directly:
 
    ```powershell
    py mini_calculator.pyw
@@ -94,7 +97,7 @@ On the first launch, Mini Calculator opens with a short example that demonstrate
 
 ## Build the Windows packages
 
-On Windows, double-click `build_windows.bat`. The two distributable files will be placed in the `release` folder. GitHub Actions also builds them automatically on every push. This revision publishes the public `v1.0.1` release; later version tags create their corresponding releases.
+On Windows, double-click `build_windows.bat`. The two distributable files will be placed in the `release` folder. On GitHub, download the updated `.exe` and fast-start ZIP from [Releases](https://github.com/arohbanian-ship-it/mini-calculator/releases/latest). GitHub Actions also builds them automatically on every push. This revision publishes the `v1.1.0` release on the main branch; later version tags create their corresponding releases.
 
 ## Privacy
 
